@@ -5,9 +5,7 @@ import { RoomState, Player } from './types';
 import { AudioRecorder } from './components/AudioRecorder';
 import { TurnHistory } from './components/TurnHistory';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || (
-  window.location.hostname === 'localhost' ? 'http://localhost:3001' : window.location.origin
-);
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://hat-noi.onrender.com';
 
 export function App() {
   const [socket, setSocket] = useState<Socket | null>(null);

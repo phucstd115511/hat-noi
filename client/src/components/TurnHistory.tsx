@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Play, Pause, Music, User } from 'lucide-react';
-import { TurnHistoryItem } from './types';
+import { TurnHistoryItem } from '../types';
 
 interface TurnHistoryProps {
   history: TurnHistoryItem[];

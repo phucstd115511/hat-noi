@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Play, Square, Volume2 } from 'lucide-react';
-import { TurnHistoryItem } from './types';
+import { TurnHistoryItem } from '../types';
 
 interface AudioRecorderProps {
   isCurrentTurn: boolean;
@@ -23,7 +23,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  const recordTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const recordTimerRef = useRef<any>(null);
 
   useEffect(() => {
     // Reset state khi đổi lượt

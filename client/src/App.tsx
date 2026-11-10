@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { Mic, Users, Trophy, RotateCcw, Volume2, Flame, LogOut, ArrowRight, Music, AlertCircle } from 'lucide-react';
+import { Mic, Users, Trophy, RotateCcw, Flame, LogOut, ArrowRight, Sparkles, AlertCircle, Copy, Check } from 'lucide-react';
 import { RoomState, Player } from './types';
 import { AudioRecorder } from './components/AudioRecorder';
 import { TurnHistory } from './components/TurnHistory';
+import { CircularCountdown } from './components/CircularCountdown';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://hat-noi.onrender.com';
 
@@ -14,8 +15,8 @@ export function App() {
   const [room, setRoom] = useState<RoomState | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [timeLeft, setTimeLeft] = useState<number>(30);
+  const [copied, setCopied] = useState(false);
 
-  // Kết nối socket
   useEffect(() => {
     const s = io(BACKEND_URL, {
       transports: ['websocket', 'polling']
@@ -27,7 +28,6 @@ export function App() {
     });
 
     s.on('turn_timeout', (data: { message: string }) => {
-      // Có thể phát âm thanh buzz hoặc thông báo
       console.log('Timeout:', data.message);
     });
 
@@ -36,7 +36,6 @@ export function App() {
     };
   }, []);
 
-  // Timer đếm ngược theo turnDeadline của server
   useEffect(() => {
     if (!room || room.status !== 'playing' || !room.turnDeadline) {
       setTimeLeft(30);
@@ -54,7 +53,7 @@ export function App() {
 
   const handleCreateRoom = () => {
     if (!playerName.trim()) {
-      setErrorMsg('Vui lòng nhập tên của bạn trước!');
+      setErrorMsg('Vui lòng nhập nickname của bạn trước!');
       return;
     }
     setErrorMsg('');
@@ -69,11 +68,11 @@ export function App() {
 
   const handleJoinRoom = () => {
     if (!playerName.trim()) {
-      setErrorMsg('Vui lòng nhập tên của bạn trước!');
+      setErrorMsg('Vui lòng nhập nickname của bạn trước!');
       return;
     }
     if (!roomCodeInput.trim()) {
-      setErrorMsg('Vui lòng nhập mã phòng (6 ký tự)!');
+      setErrorMsg('Vui lòng nhập mã phòng 6 chữ số!');
       return;
     }
     setErrorMsg('');
@@ -112,9 +111,16 @@ export function App() {
       audioBase64
     }, (res: any) => {
       if (!res.success) {
-        setErrorMsg(res.error || 'Câu hát không hợp lệ!');
+        setErrorMsg(res.error || 'Câu hát chưa đúng luật!');
       }
     });
+  };
+
+  const handleCopyCode = () => {
+    if (!room) return;
+    navigator.clipboard.writeText(room.code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const currentPlayer = room?.players.find(p => p.id === socket?.id);
@@ -122,75 +128,78 @@ export function App() {
   const isMyTurn = room?.status === 'playing' && room?.currentTurnPlayerId === socket?.id;
   const currentTurnPlayer = room?.players.find(p => p.id === room?.currentTurnPlayerId);
 
-  // MÀN HÌNH CHƯA VÀO PHÒNG
+  // MÀN HÌNH CHƯA VÀO PHÒNG (CYBER MUSIC THEME)
   if (!room) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center px-4 py-12 relative overflow-hidden">
-        {/* Glow background */}
-        <div className="absolute top-1/4 -left-20 w-80 h-80 bg-indigo-600/20 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-rose-600/20 rounded-full blur-[120px] pointer-events-none" />
+      <div className="min-h-screen bg-[#070714] text-slate-100 flex flex-col justify-center items-center px-4 py-12 relative overflow-hidden">
+        {/* Neon Ambient Glows */}
+        <div className="absolute top-1/4 -left-20 w-96 h-96 bg-[#7928CA]/25 rounded-full blur-[140px] pointer-events-none" />
+        <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-[#00F0FF]/20 rounded-full blur-[140px] pointer-events-none" />
+        <div className="absolute top-10 right-1/4 w-72 h-72 bg-[#FF2A85]/20 rounded-full blur-[120px] pointer-events-none" />
 
-        <div className="w-full max-w-md relative z-10">
-          <div className="text-center mb-8">
-            <div className="inline-flex p-3 rounded-2xl bg-gradient-to-tr from-indigo-500 to-rose-500 text-white shadow-xl shadow-indigo-500/25 mb-4">
-              <Mic className="w-8 h-8" />
+        <div className="w-full max-w-md relative z-10 space-y-6">
+          <div className="text-center space-y-2">
+            <div className="inline-flex p-4 rounded-3xl bg-gradient-to-tr from-[#00F0FF] via-[#7928CA] to-[#FF2A85] text-white shadow-[0_0_35px_rgba(121,40,202,0.5)] mb-3 transform hover:rotate-6 transition-transform">
+              <Mic className="w-9 h-9" />
             </div>
-            <h1 className="text-3xl font-extrabold text-white tracking-tight">Hát Nối Real-time</h1>
-            <p className="text-sm text-slate-400 mt-2">
-              Đấu trường âm nhạc nối chữ tiếng Việt cực cuốn cùng bạn bè!
+            <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#00F0FF] via-white to-[#FF2A85] tracking-tight">
+              HÁT NỐI LIVE
+            </h1>
+            <p className="text-xs uppercase tracking-widest text-[#00F0FF] font-semibold">
+              Cyberpunk Voice Battles • Real-time
             </p>
           </div>
 
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-2xl backdrop-blur-xl">
-            {errorMsg && (
-              <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-300 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
-                <span>{errorMsg}</span>
-              </div>
-            )}
+          <div className="relative rounded-3xl p-[1px] bg-gradient-to-b from-indigo-500/30 to-indigo-950/20 shadow-2xl">
+            <div className="bg-[#0f0f26]/90 backdrop-blur-2xl rounded-[23px] p-7 space-y-5">
+              {errorMsg && (
+                <div className="p-3 bg-[#FF2A85]/15 border border-[#FF2A85]/40 rounded-xl text-xs font-semibold text-[#FF85C0] flex items-center gap-2 animate-shake">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-[#FF2A85]" />
+                  <span>{errorMsg}</span>
+                </div>
+              )}
 
-            <div className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-                  Tên hiển thị của bạn
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-300 mb-2">
+                  Nickname của bạn
                 </label>
                 <input
                   type="text"
                   value={playerName}
                   onChange={(e) => setPlayerName(e.target.value)}
-                  placeholder="Nhập nickname của bạn..."
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 outline-none transition"
+                  placeholder="Ví dụ: Sơn Tùng, Jennie, Jack..."
+                  className="w-full bg-[#080817] border border-slate-800 focus:border-[#00F0FF] focus:ring-1 focus:ring-[#00F0FF] rounded-2xl px-4 py-3.5 text-sm text-white placeholder-slate-600 outline-none transition"
                 />
               </div>
 
-              <div className="pt-2">
-                <button
-                  onClick={handleCreateRoom}
-                  className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 active:scale-98 transition flex items-center justify-center gap-2"
-                >
-                  <Flame className="w-4 h-4 text-amber-300" />
-                  Tạo phòng chơi mới
-                </button>
+              <button
+                onClick={handleCreateRoom}
+                className="w-full cursor-pointer py-4 px-4 rounded-2xl bg-gradient-to-r from-[#00F0FF] via-[#7928CA] to-[#FF2A85] hover:opacity-95 text-white font-black text-sm uppercase tracking-wider shadow-[0_0_25px_rgba(121,40,202,0.4)] active:scale-98 transition flex items-center justify-center gap-2"
+              >
+                <Flame className="w-5 h-5 text-[#FFB800]" />
+                Tạo phòng đấu mới
+              </button>
+
+              <div className="relative flex items-center py-1">
+                <div className="flex-grow border-t border-slate-800/80"></div>
+                <span className="flex-shrink mx-3 text-[11px] text-slate-500 uppercase tracking-widest font-black">
+                  Hoặc nhập mã phòng
+                </span>
+                <div className="flex-grow border-t border-slate-800/80"></div>
               </div>
 
-              <div className="relative flex items-center py-2">
-                <div className="flex-grow border-t border-slate-800"></div>
-                <span className="flex-shrink mx-3 text-xs text-slate-500 uppercase tracking-wider font-semibold">Hoặc vào phòng</span>
-                <div className="flex-grow border-t border-slate-800"></div>
-              </div>
-
-              <div className="flex gap-2">
+              <div className="flex gap-2.5">
                 <input
                   type="text"
                   value={roomCodeInput}
                   onChange={(e) => setRoomCodeInput(e.target.value.toUpperCase())}
                   maxLength={6}
-                  placeholder="MÃ PHÒNG (6 KÝ TỰ)"
-                  className="flex-1 bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 outline-none text-center font-mono tracking-widest uppercase transition"
+                  placeholder="MÃ 6 CHỮ CÁI"
+                  className="flex-1 bg-[#080817] border border-slate-800 focus:border-[#00F0FF] focus:ring-1 focus:ring-[#00F0FF] rounded-2xl px-4 py-3.5 text-sm text-white placeholder-slate-600 outline-none text-center font-mono tracking-widest uppercase transition font-bold"
                 />
                 <button
                   onClick={handleJoinRoom}
-                  className="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm border border-slate-700 active:scale-98 transition flex items-center gap-1.5"
+                  className="cursor-pointer px-6 py-3.5 rounded-2xl bg-[#1c1c3f] hover:bg-[#282859] text-[#00F0FF] font-black text-sm border border-[#00F0FF]/30 shadow-[0_0_15px_rgba(0,240,255,0.2)] active:scale-98 transition flex items-center gap-1.5"
                 >
                   <span>Vào</span>
                   <ArrowRight className="w-4 h-4" />
@@ -203,33 +212,42 @@ export function App() {
     );
   }
 
-  // MÀN HÌNH PHÒNG CHƠI
+  // MÀN HÌNH PHÒNG CHƠI CHÍNH
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-[#070714] text-slate-100 flex flex-col relative overflow-hidden">
+      {/* Background ambient lighting */}
+      <div className="absolute top-0 left-1/3 w-[600px] h-[300px] bg-[#7928CA]/15 rounded-full blur-[160px] pointer-events-none" />
+      <div className="absolute bottom-10 right-10 w-[400px] h-[400px] bg-[#00F0FF]/10 rounded-full blur-[140px] pointer-events-none" />
+
       {/* Header bar */}
-      <header className="border-b border-slate-800/80 bg-slate-900/50 backdrop-blur-md px-4 py-3.5 sticky top-0 z-30 flex items-center justify-between">
+      <header className="border-b border-indigo-950/80 bg-[#0d0d21]/70 backdrop-blur-xl px-5 py-3.5 sticky top-0 z-30 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30">
+          <div className="p-2 rounded-2xl bg-gradient-to-tr from-[#7928CA] to-[#FF2A85] text-white shadow-[0_0_15px_rgba(255,42,133,0.4)]">
             <Mic className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-400">Mã phòng:</span>
-              <span className="font-mono font-black text-amber-400 tracking-wider bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20 text-sm">
-                {room.code}
-              </span>
+              <span className="text-[11px] text-slate-400 uppercase font-semibold">Phòng:</span>
+              <button
+                onClick={handleCopyCode}
+                className="cursor-pointer font-mono font-black text-[#FFB800] tracking-widest bg-[#151533] hover:bg-[#1f1f48] px-2.5 py-0.5 rounded-lg border border-[#FFB800]/30 text-sm flex items-center gap-1.5 transition"
+                title="Bấm để copy mã phòng"
+              >
+                <span>{room.code}</span>
+                {copied ? <Check className="w-3.5 h-3.5 text-[#00F0FF]" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
+              </button>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <div className="text-right hidden sm:block">
-            <span className="text-xs text-slate-400 block">Bạn là</span>
-            <span className="text-sm font-bold text-white">{currentPlayer?.name}</span>
+            <span className="text-[10px] text-slate-400 uppercase block font-medium">Người chơi</span>
+            <span className="text-sm font-black text-white">{currentPlayer?.name}</span>
           </div>
           <button
             onClick={() => window.location.reload()}
-            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-rose-400 transition"
+            className="cursor-pointer p-2.5 rounded-2xl bg-[#141430] hover:bg-[#1e1e44] text-slate-400 hover:text-[#FF2A85] border border-indigo-950 transition active:scale-95"
             title="Rời phòng"
           >
             <LogOut className="w-4 h-4" />
@@ -238,30 +256,29 @@ export function App() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6 relative z-10">
         
-        {/* Cột trái & giữa: Bảng đấu chính & Lịch sử */}
+        {/* Cột trái: Đấu trường chính & Lịch sử */}
         <div className="lg:col-span-2 space-y-6">
 
-          {/* Error notification banner */}
           {errorMsg && (
-            <div className="p-4 bg-rose-500/20 border border-rose-500/40 rounded-2xl text-sm text-rose-300 flex items-center gap-3 animate-shake">
-              <AlertCircle className="w-5 h-5 shrink-0 text-rose-400" />
+            <div className="p-4 bg-[#FF2A85]/20 border border-[#FF2A85]/50 rounded-2xl text-sm font-bold text-[#FF85C0] flex items-center gap-3 animate-shake shadow-[0_0_20px_rgba(255,42,133,0.3)]">
+              <AlertCircle className="w-5 h-5 shrink-0 text-[#FF2A85]" />
               <div className="flex-1">{errorMsg}</div>
-              <button onClick={() => setErrorMsg('')} className="text-xs underline text-rose-400">Đóng</button>
+              <button onClick={() => setErrorMsg('')} className="text-xs underline text-[#FF85C0] cursor-pointer">Đóng</button>
             </div>
           )}
 
-          {/* VÙNG TRẠNG THÁI CHỜ BẮT ĐẦU */}
+          {/* VÙNG CHỜ BẮT ĐẦU */}
           {room.status === 'waiting' && (
-            <div className="bg-slate-900/70 border border-slate-800 rounded-3xl p-8 text-center space-y-5">
-              <div className="w-16 h-16 rounded-3xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto text-indigo-400">
+            <div className="bg-[#101026]/80 border border-indigo-950/80 rounded-3xl p-8 text-center space-y-6 backdrop-blur-xl shadow-2xl">
+              <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-[#00F0FF]/20 to-[#7928CA]/30 border border-[#00F0FF]/30 flex items-center justify-center mx-auto text-[#00F0FF] shadow-[0_0_25px_rgba(0,240,255,0.25)]">
                 <Users className="w-8 h-8" />
               </div>
-              <div>
-                <h2 className="text-2xl font-bold text-white">Phòng chờ ({room.players.length} người)</h2>
-                <p className="text-sm text-slate-400 mt-1 max-w-md mx-auto">
-                  Hãy gửi mã phòng <b className="text-amber-400 font-mono tracking-widest">{room.code}</b> cho bạn bè cùng vào chơi!
+              <div className="space-y-1">
+                <h2 className="text-2xl font-black text-white">Phòng Chờ Đấu ({room.players.length} người)</h2>
+                <p className="text-xs text-slate-400 max-w-md mx-auto">
+                  Mời bạn bè cùng nhập mã phòng <b className="text-[#FFB800] font-mono tracking-widest text-sm">{room.code}</b> để bắt đầu đại chiến âm nhạc!
                 </p>
               </div>
 
@@ -270,14 +287,15 @@ export function App() {
                   <button
                     onClick={handleStartGame}
                     disabled={room.players.length < 2}
-                    className="py-3.5 px-8 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-bold text-sm shadow-xl shadow-emerald-950/50 transition active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="cursor-pointer py-4 px-9 rounded-2xl bg-gradient-to-r from-[#00F0FF] via-[#7928CA] to-[#FF2A85] hover:opacity-95 text-white font-black text-sm uppercase tracking-wider shadow-[0_0_30px_rgba(121,40,202,0.5)] transition active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    {room.players.length < 2 ? 'Cần ít nhất 2 người để bắt đầu' : 'Bắt đầu ván đấu! 🚀'}
+                    {room.players.length < 2 ? 'Cần ít nhất 2 người để bắt đầu' : 'Bắt đầu ván đấu ngay! 🚀'}
                   </button>
                 </div>
               ) : (
-                <div className="inline-block py-2 px-4 rounded-xl bg-slate-800 text-slate-400 text-xs animate-pulse">
-                  Đang đợi chủ phòng bấm Bắt đầu...
+                <div className="inline-flex items-center gap-2 py-2.5 px-5 rounded-2xl bg-[#161633] text-slate-400 text-xs font-semibold border border-indigo-950 animate-pulse">
+                  <span className="w-2 h-2 rounded-full bg-[#00F0FF]"></span>
+                  Đang đợi Host bắt đầu trận đấu...
                 </div>
               )}
             </div>
@@ -286,49 +304,57 @@ export function App() {
           {/* VÙNG ĐANG CHƠI */}
           {room.status === 'playing' && (
             <>
-              {/* Lượt hiện tại & Đếm ngược 30s */}
-              <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 relative overflow-hidden shadow-2xl">
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              {/* Lượt hiện tại, Circular Countdown & Chữ cái mục tiêu */}
+              <div className="bg-[#101026]/90 border border-indigo-950/80 rounded-3xl p-6 shadow-2xl backdrop-blur-xl relative overflow-hidden">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+                  
+                  {/* Player đang hát */}
                   <div className="flex items-center gap-4 text-center sm:text-left">
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 to-rose-500 flex items-center justify-center text-white font-black text-xl shadow-lg">
-                      {currentTurnPlayer?.avatarLetter || 'P'}
+                    <div className="relative">
+                      <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-[#7928CA] to-[#FF2A85] flex items-center justify-center text-white font-black text-2xl shadow-[0_0_20px_rgba(255,42,133,0.5)]">
+                        {currentTurnPlayer?.avatarLetter || 'P'}
+                      </div>
+                      <span className="absolute -bottom-1 -right-1 flex h-4 w-4">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00F0FF] opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-4 w-4 bg-[#00F0FF]"></span>
+                      </span>
                     </div>
+
                     <div>
-                      <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
-                        Đang đến lượt của
+                      <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 block">
+                        Đang trong lượt của
                       </span>
                       <h2 className="text-2xl font-black text-white flex items-center gap-2">
                         <span>{currentTurnPlayer?.name}</span>
                         {isMyTurn && (
-                          <span className="text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-normal">
-                            Là bạn!
+                          <span className="text-xs bg-[#00F0FF]/15 text-[#00F0FF] border border-[#00F0FF]/30 px-2.5 py-0.5 rounded-full font-bold">
+                            Chính là bạn!
                           </span>
                         )}
                       </h2>
                     </div>
                   </div>
 
-                  {/* Vòng đếm ngược thời gian */}
-                  <div className="flex items-center gap-4">
-                    <div className="text-center">
-                      <div className={`text-3xl font-mono font-black ${timeLeft <= 5 ? 'text-rose-500 animate-ping' : timeLeft <= 10 ? 'text-amber-400' : 'text-indigo-400'}`}>
-                        {timeLeft}s
-                      </div>
-                      <span className="text-[10px] text-slate-500 uppercase tracking-wider">Thời gian</span>
-                    </div>
+                  {/* Vòng đếm ngược & Chữ cái */}
+                  <div className="flex items-center gap-5">
+                    {/* Circular Timer Visualizer */}
+                    <CircularCountdown timeLeft={timeLeft} totalTime={30} />
 
-                    {/* Chữ cái bắt buộc */}
-                    <div className="bg-slate-950/80 border border-slate-800 px-5 py-3 rounded-2xl text-center min-w-[90px]">
-                      <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Chữ cái</span>
-                      <span className="text-2xl font-black text-amber-400 font-mono">
+                    {/* Chữ cái mục tiêu */}
+                    <div className="bg-[#090918] border border-indigo-950 px-5 py-3 rounded-2xl text-center min-w-[95px] shadow-inner">
+                      <span className="text-[9px] text-slate-400 uppercase tracking-widest font-black block">
+                        CHỮ CÁI
+                      </span>
+                      <span className="text-3xl font-black text-[#FFB800] font-mono">
                         {room.targetLetter || 'Tự do'}
                       </span>
                     </div>
                   </div>
+
                 </div>
               </div>
 
-              {/* Box Ghi âm & Nhập câu hát */}
+              {/* Box Ghi âm giọng hát */}
               <AudioRecorder
                 isCurrentTurn={isMyTurn}
                 targetLetter={room.targetLetter}
@@ -340,23 +366,25 @@ export function App() {
 
           {/* VÙNG KẾT THÚC GAME */}
           {room.status === 'ended' && (
-            <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-8 text-center space-y-6">
-              <Trophy className="w-16 h-16 text-amber-400 mx-auto animate-bounce-short" />
-              <div>
-                <h2 className="text-3xl font-black text-white">Ván đấu kết thúc!</h2>
+            <div className="bg-[#101026]/90 border border-indigo-950/80 rounded-3xl p-8 text-center space-y-6 backdrop-blur-xl shadow-2xl">
+              <div className="relative inline-block">
+                <Trophy className="w-16 h-16 text-[#FFB800] mx-auto animate-bounce-short filter drop-shadow-[0_0_20px_rgba(255,184,0,0.6)]" />
+              </div>
+              <div className="space-y-1">
+                <h2 className="text-3xl font-black text-white">Ván đấu đã kết thúc!</h2>
                 {room.winner ? (
-                  <p className="text-lg text-emerald-400 font-semibold mt-1">
-                    🎉 Chúc mừng người chiến thắng: <b className="text-white">{room.winner.name}</b>!
+                  <p className="text-lg text-[#00F0FF] font-black mt-1">
+                    👑 Chúc mừng nhà vô địch: <span className="text-white underline decoration-[#FF2A85]">{room.winner.name}</span>!
                   </p>
                 ) : (
-                  <p className="text-slate-400 mt-1">Trận đấu đã khép lại.</p>
+                  <p className="text-slate-400 text-sm">Trận đấu đã khép lại cực kỳ gay cấn.</p>
                 )}
               </div>
 
               {isHost && (
                 <button
                   onClick={handleRestartGame}
-                  className="py-3 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-900/50 transition active:scale-95 inline-flex items-center gap-2"
+                  className="cursor-pointer py-3.5 px-8 rounded-2xl bg-gradient-to-r from-[#00F0FF] to-[#7928CA] hover:opacity-95 text-white font-black text-sm uppercase tracking-wider shadow-[0_0_25px_rgba(0,240,255,0.4)] transition active:scale-95 inline-flex items-center gap-2"
                 >
                   <RotateCcw className="w-4 h-4" />
                   Chơi lại ván mới
@@ -369,55 +397,58 @@ export function App() {
           <TurnHistory history={room.history} />
         </div>
 
-        {/* Cột phải: Bảng điểm & Danh sách người chơi */}
+        {/* Cột phải: Bảng xếp hạng & Danh sách người chơi */}
         <div className="space-y-6">
-          <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-xl">
-            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between mb-4">
+          <div className="bg-[#101026]/80 border border-indigo-950/80 rounded-3xl p-6 shadow-2xl backdrop-blur-xl">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center justify-between mb-4">
               <span className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-indigo-400" />
+                <Users className="w-4 h-4 text-[#00F0FF]" />
                 Người chơi ({room.players.length})
               </span>
-              <span className="text-xs text-slate-500">Điểm</span>
+              <span className="text-[11px] text-slate-500">Điểm số</span>
             </h3>
 
             <div className="space-y-3">
-              {room.players.map((p, idx) => {
+              {room.players.map((p) => {
                 const isCurrent = p.id === room.currentTurnPlayerId;
                 return (
                   <div
                     key={p.id}
-                    className={`flex items-center justify-between p-3 rounded-2xl border transition ${
+                    className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all ${
                       isCurrent
-                        ? 'bg-indigo-600/10 border-indigo-500/50'
-                        : 'bg-slate-950/60 border-slate-800/80'
+                        ? 'bg-[#181838] border-[#00F0FF]/60 shadow-[0_0_20px_rgba(0,240,255,0.25)]'
+                        : 'bg-[#090918]/70 border-indigo-950/60'
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       <div className="relative">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-slate-700 to-slate-600 flex items-center justify-center font-bold text-white text-sm">
+                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#7928CA] to-[#00F0FF] flex items-center justify-center font-black text-white text-sm shadow">
                           {p.avatarLetter}
                         </div>
                         {p.isHost && (
-                          <span className="absolute -top-1 -right-1 bg-amber-500 text-[9px] font-black px-1 rounded-full text-slate-950">
+                          <span className="absolute -top-1 -right-1 bg-[#FFB800] text-[8px] font-black px-1.5 py-0.2 rounded-full text-slate-950">
                             HOST
                           </span>
                         )}
                       </div>
                       <div>
-                        <div className="text-sm font-bold text-white flex items-center gap-1.5">
+                        <div className="text-sm font-black text-white flex items-center gap-1.5">
                           <span>{p.name}</span>
                           {p.id === socket?.id && (
-                            <span className="text-[10px] text-slate-400 font-normal">(Bạn)</span>
+                            <span className="text-[10px] text-[#00F0FF] font-semibold">(Bạn)</span>
                           )}
                         </div>
                         {isCurrent && (
-                          <span className="text-[11px] text-indigo-400 font-medium">Đang hát...</span>
+                          <span className="text-[10px] text-[#00F0FF] font-black uppercase tracking-wider flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#00F0FF] animate-ping" />
+                            Đang hát...
+                          </span>
                         )}
                       </div>
                     </div>
 
                     <div className="text-right">
-                      <span className="text-base font-black font-mono text-amber-400">
+                      <span className="text-lg font-black font-mono text-[#FFB800]">
                         {p.score}
                       </span>
                     </div>
@@ -427,12 +458,14 @@ export function App() {
             </div>
           </div>
 
-          {/* Luật chơi tóm tắt */}
-          <div className="bg-slate-900/50 border border-slate-800/60 rounded-3xl p-5 text-xs text-slate-400 space-y-2">
-            <h4 className="font-bold text-slate-300 uppercase tracking-wider text-[11px]">Luật chơi</h4>
-            <p>1. Lấy <b>chữ cái đầu</b> của <b>từ cuối cùng</b> người trước hát để hát câu tiếp.</p>
-            <p>2. Mỗi người có <b>30 giây</b> để bấm ghi âm và gửi câu hát.</p>
-            <p>3. Không được lặp lại câu đã có người dùng trong ván.</p>
+          {/* Quick Rules Box */}
+          <div className="bg-[#101026]/50 border border-indigo-950/50 rounded-3xl p-5 text-xs text-slate-400 space-y-2 backdrop-blur-sm">
+            <h4 className="font-black text-[#00F0FF] uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+              <span>Luật chơi Hát Nối</span>
+            </h4>
+            <p>1. Lấy <b>chữ cái đầu</b> của <b>từ cuối cùng</b> người trước hát để hát câu tiếp theo.</p>
+            <p>2. Mỗi lượt có <b>30 giây</b> để bấm ghi âm và gửi câu hát.</p>
+            <p>3. Không được lặp lại câu đã được hát trong cùng ván.</p>
           </div>
         </div>
 
